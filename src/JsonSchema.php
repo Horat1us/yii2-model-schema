@@ -75,7 +75,7 @@ class JsonSchema
                     'type' => 'string',
                     'pattern' => trim($validator->pattern, "\\/"),
                 ];
-                if (property_exists('format', $validator)) {
+                if (property_exists($validator, 'format')) {
                     $schema['format'] ??= $validator->format;
                 }
             } elseif ($validator instanceof validators\DateValidator) {
