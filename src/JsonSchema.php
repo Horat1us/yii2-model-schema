@@ -73,7 +73,7 @@ class JsonSchema
             } elseif ($validator instanceof validators\RegularExpressionValidator) {
                 $schema += [
                     'type' => 'string',
-                    'pattern' => trim($validator->pattern, "\\/"),
+                    'pattern' => preg_replace("(^/|/\w+$)", "", $validator->pattern),
                 ];
                 if (property_exists($validator, 'format')) {
                     $schema['format'] ??= $validator->format;
