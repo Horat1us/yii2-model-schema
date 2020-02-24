@@ -91,6 +91,9 @@ class JsonSchema
                         $schema['format'] ??= 'date-time';
                         break;
                 }
+            } elseif ($validator instanceof validators\EmailValidator) {
+                $schema['type'] ??= 'string';
+                $schema['format'] = 'email';
             }
             if (property_exists($validator, 'comment')) {
                 $schema['comment'] = array_key_exists('comment', $schema)
