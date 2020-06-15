@@ -1,17 +1,62 @@
 <?php declare(strict_types=1);
 
-namespace Horat1us\Yii\Model;
+namespace Horat1us\Yii;
 
+use yii\helpers\Inflector;
 use yii\validators;
 use yii\base;
 
-class JsonSchema
+class JsonSchema implements \JsonSerializable
 {
-    public base\Model $model;
+    protected base\Model $model;
 
     public function __construct(base\Model $model)
     {
         $this->model = $model;
+    }
+
+    public function jsonSerialize(): array
+    {
+        $schema = [
+            '$schema' => "http://json-schema.org/draft-07/schema#",
+            'title' => Inflector::camel2words($this->model->formName()),
+            'type' => 'object',
+        ];
+        $properties = [];
+        $required = [];
+        $attributes = $this->model->activeAttributes();
+        $validators = $this->model->getActiveValidators();
+        $hints = $this->model->attributeHints();
+        $values = array_filter(
+            $this->model->getAttributes($attributes),
+        fn($value) => !is_null($value)
+        );
+        foreach ($attributes as $attribute) {
+            $property = [
+                'title' => $this->model->getAttributeLabel($attribute),
+            ];
+            if (array_key_exists($attribute, $hints)) {
+                $property['description'] = $hints[$attribute];
+            }
+            foreach ($validators as $validator) {
+                if (!in_array($attribute, $validator->attributes)) {
+                    continue;
+                }
+                if ($validator instanceof validators\RequiredValidator) {
+                    $required[] = $attribute;
+                    continue;
+                }
+                $property += $this->validator($validator, $attribute);
+            }
+            $properties[$attribute] = $property;
+        }
+        if (count($properties)) {
+            $schema['properties'] = $properties;
+        }
+        if (count($required)) {
+            $schema['required'] = $required;
+        }
+        return $schema;
     }
 
     public function attribute(string $name): array
@@ -20,87 +65,104 @@ class JsonSchema
             '$schema' => "http://json-schema.org/draft-07/schema#",
             'title' => $this->model->getAttributeLabel($name),
         ];
-
         if ($hint = $this->model->getAttributeHint($name)) {
             $schema['description'] = $hint;
         }
-
-        $validators = array_filter(
-            $this->model->getActiveValidators(),
-            fn(validators\Validator $validator): bool => in_array($name, $validator->attributes)
+        return array_reduce(
+            $this->model->getActiveValidators($name),
+            fn(array $schema, validators\Validator $v) => $schema + $this->validator($v, $name),
+            $schema,
         );
-        foreach ($validators as $validator) {
-            if ($validator instanceof validators\RequiredValidator
-                || $validator instanceof validators\FilterValidator
-            ) {
-                continue;
-            }
-            if ($validator instanceof validators\StringValidator) {
-                $length = (array)$validator->length;
-                $schema += [
-                    'type' => 'string',
-                    'minLength' => $length[0] ?? $validator->min,
-                    'maxLength' => $length[1] ?? $validator->max,
-                ];
-            } elseif ($validator instanceof validators\RangeValidator) {
-                $values = $validator->range instanceof \Closure
-                    ? call_user_func($validator->range, $this->model, $name)
-                    : $validator->range;
-                if (!($this->model instanceof AttributeValuesLabels)
-                    || !($labels = $this->model->attributeValuesLabels($name))
-                    || !array_reduce(
-                        $values,
-                        fn($result, $value) => $result
-                            && (is_string($value) || is_int($value))
-                            && array_key_exists($value, $labels), true
-                    )
-                ) {
-                    $schema['enum'] ??= $values;
-                } else {
-                    $schema['oneOf'] ??= array_map(
-                        fn($value) => ['const' => $value, 'title' => $labels[$value]],
-                        $values
-                    );
-                }
-            } elseif ($validator instanceof validators\NumberValidator) {
-                $schema['type'] ??= $validator->integerOnly ? 'integer' : 'number';
-                if (!is_null($validator->min)) {
-                    $schema += ['minimum' => $validator->min];
-                }
-                if (!is_null($validator->max)) {
-                    $schema += ['maximum' => $validator->max];
-                }
-            } elseif ($validator instanceof validators\RegularExpressionValidator) {
-                $schema += [
-                    'type' => 'string',
-                    'pattern' => preg_replace("(^/|/\w+$)", "", $validator->pattern),
-                ];
-                if (property_exists($validator, 'format')) {
-                    $schema['format'] ??= $validator->format;
-                }
-            } elseif ($validator instanceof validators\DateValidator) {
-                $schema['type'] ??= 'string';
-                switch ($validator->type) {
-                    case validators\DateValidator::TYPE_DATE:
-                        $schema['format'] ??= 'date';
-                        break;
-                    case validators\DateValidator::TYPE_TIME;
-                        $schema['format'] ??= 'time';
-                        break;
-                    case validators\DateValidator::TYPE_DATETIME;
-                        $schema['format'] ??= 'date-time';
-                        break;
-                }
-            } elseif ($validator instanceof validators\EmailValidator) {
-                $schema['type'] ??= 'string';
-                $schema['format'] = 'email';
-            }
-            if (property_exists($validator, 'comment')) {
-                $schema['comment'] = array_key_exists('comment', $schema)
-                    ? "{$schema['comment']};{$validator->comment}"
-                    : $validator->comment;
-            }
+    }
+
+    public function validator(validators\Validator $validator, string $name = null): array
+    {
+        if ($validator instanceof validators\RequiredValidator
+            || $validator instanceof validators\FilterValidator
+            || $validator instanceof validators\InlineValidator
+        ) {
+            return [];
         }
-        return $schema;
+        if ($validator instanceof validators\StringValidator) {
+            $length = (array)$validator->length;
+            return array_filter([
+                'type' => 'string',
+                'minLength' => $length[0] ?? $validator->min,
+                'maxLength' => $length[1] ?? $validator->max,
+            ]);
+        } elseif ($validator instanceof validators\RangeValidator) {
+            $values = $validator->range;
+            if ($values instanceof \Closure) {
+                if (is_null($name)) {
+                    $reflection = new \ReflectionFunction($values);
+                    if ($reflection->getNumberOfRequiredParameters() !== 0) {
+                        return ['enum' => [],];
+                    }
+                    $values = call_user_func($values);
+                } else {
+                    $values = call_user_func($values, $this->model, $name);
+                }
+            }
+            if (!($this->model instanceof Model\AttributeValuesLabels)
+                || !($labels = $this->model->attributeValuesLabels($name))
+                || !array_reduce(
+                    $values,
+                    fn($result, $value) => $result
+                        && (is_string($value) || is_int($value))
+                        && array_key_exists($value, $labels), true
+                )
+            ) {
+                return [
+                    'enum' => $values,
+                ];
+            } else {
+                $oneOf = array_map(
+                    fn($value) => ['const' => $value, 'title' => $labels[$value]],
+                    $values
+                );
+                return compact('oneOf');
+            }
+        } elseif ($validator instanceof validators\NumberValidator) {
+            $schema = [
+                'type' => $validator->integerOnly ? 'integer' : 'number'
+            ];
+            if (!is_null($validator->min)) {
+                $schema['minimum'] = $validator->min;
+            }
+            if (!is_null($validator->max)) {
+                $schema['maximum'] = $validator->max;
+            }
+            return $schema;
+        } elseif ($validator instanceof validators\RegularExpressionValidator) {
+            return [
+                'type' => 'string',
+                'pattern' => preg_replace("(^/|/\w+$)", "", $validator->pattern),
+            ];
+        } elseif ($validator instanceof validators\DateValidator) {
+            $schema = [
+                'type' => 'string',
+            ];
+            switch ($validator->type) {
+                case validators\DateValidator::TYPE_DATE:
+                    $schema['format'] ??= 'date';
+                    break;
+                case validators\DateValidator::TYPE_TIME;
+                    $schema['format'] ??= 'time';
+                    break;
+                case validators\DateValidator::TYPE_DATETIME;
+                    $schema['format'] ??= 'date-time';
+                    break;
+            }
+            return $schema;
+        } elseif ($validator instanceof validators\EmailValidator) {
+            return [
+                'type' => 'string',
+                'format' => 'email',
+            ];
+        } elseif ($validator instanceof Validation\JsonSchema) {
+            return $validator->getJsonSchema();
+        }
+
+        return [];
     }
 }
