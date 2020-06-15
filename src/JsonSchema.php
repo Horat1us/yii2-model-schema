@@ -27,10 +27,6 @@ class JsonSchema implements \JsonSerializable
         $attributes = $this->model->activeAttributes();
         $validators = $this->model->getActiveValidators();
         $hints = $this->model->attributeHints();
-        $values = array_filter(
-            $this->model->getAttributes($attributes),
-        fn($value) => !is_null($value)
-        );
         foreach ($attributes as $attribute) {
             $property = [
                 'title' => $this->model->getAttributeLabel($attribute),
@@ -109,7 +105,8 @@ class JsonSchema implements \JsonSerializable
                     $values,
                     fn($result, $value) => $result
                         && (is_string($value) || is_int($value))
-                        && array_key_exists($value, $labels), true
+                        && array_key_exists($value, $labels),
+                    true
                 )
             ) {
                 return [
@@ -141,17 +138,10 @@ class JsonSchema implements \JsonSerializable
         } elseif ($validator instanceof validators\DateValidator) {
             $schema = [
                 'type' => 'string',
+                'format' => $validator->type,
             ];
-            switch ($validator->type) {
-                case validators\DateValidator::TYPE_DATE:
-                    $schema['format'] ??= 'date';
-                    break;
-                case validators\DateValidator::TYPE_TIME;
-                    $schema['format'] ??= 'time';
-                    break;
-                case validators\DateValidator::TYPE_DATETIME;
-                    $schema['format'] ??= 'date-time';
-                    break;
+            if ($validator->type === validators\DateValidator::TYPE_DATETIME) {
+                $schema['format'] = 'date-time';
             }
             return $schema;
         } elseif ($validator instanceof validators\EmailValidator) {

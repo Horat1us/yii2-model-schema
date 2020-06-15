@@ -3,9 +3,11 @@
 namespace Horat1us\Yii\Tests;
 
 use Horat1us\Yii\JsonSchema;
+use Horat1us\Yii\Model\AttributeValuesLabels;
 use PHPUnit\Framework\TestCase;
 use yii\base;
 use yii\validators;
+use Horat1us\Yii\Validation;
 
 class JsonSchemaTest extends TestCase
 {
@@ -130,7 +132,92 @@ class JsonSchemaTest extends TestCase
                     return [1, 2,];
                 },
                 'attributes' => ['atr',],
-            ]), ['enum' => [1, 2,],]]
+            ]), ['enum' => [1, 2,],]],
+            [$model, new validators\NumberValidator(['min' => 1, 'max' => 10,]), [
+                'type' => 'number',
+                'minimum' => 1,
+                'maximum' => 10,
+            ],],
+            [
+                new class extends base\Model implements AttributeValuesLabels {
+
+                    public function attributeValuesLabels(string $attribute): ?array
+                    {
+                        return [
+                                'atr' => [
+                                    1 => 'One',
+                                    2 => 'Two',
+                                ],
+                            ][$attribute] ?? null;
+                    }
+                },
+                new validators\RangeValidator([
+                    'range' => [1, 2,],
+                    'attributes' => 'atr',
+                ]),
+                [
+                    'oneOf' => [
+                        [
+                            'title' => 'One',
+                            'const' => 1,
+                        ],
+                        [
+                            'title' => 'Two',
+                            'const' => 2,
+                        ],
+                    ],
+                ],
+            ],
+            [$model, new validators\RegularExpressionValidator([
+                'pattern' => '/^\d+$/u',
+            ]), [
+                'type' => 'string',
+                'pattern' => '^\d+$'
+            ]],
+            [$model, new validators\DateValidator([
+                'type' => validators\DateValidator::TYPE_DATE,
+                'locale' => 'en',
+                'timeZone' => 'Europe/Kiev',
+                'format' => '',
+            ]), [
+                'type' => 'string',
+                'format' => 'date',
+            ]],
+            [$model, new validators\DateValidator([
+                'type' => validators\DateValidator::TYPE_TIME,
+                'locale' => 'en',
+                'timeZone' => 'Europe/Kiev',
+                'format' => '',
+            ]), [
+                'type' => 'string',
+                'format' => 'time',
+            ]],
+            [$model, new validators\DateValidator([
+                'type' => validators\DateValidator::TYPE_DATETIME,
+                'locale' => 'en',
+                'timeZone' => 'Europe/Kiev',
+                'format' => '',
+            ]), [
+                'type' => 'string',
+                'format' => 'date-time',
+            ]],
+            [$model, new validators\EmailValidator(), [
+                'type' => 'string',
+                'format' => 'email',
+            ]],
+            [$model, $this->createMock(validators\Validator::class), []],
+            [$model, new class extends validators\Validator implements Validation\JsonSchema {
+                public function getJsonSchema(): array
+                {
+                    return [
+                        'type' => 'string',
+                        'format' => 'inn',
+                    ];
+                }
+            }, [
+                'type' => 'string',
+                'format' => 'inn',
+            ]],
         ];
     }
 
