@@ -158,6 +158,6 @@ class JsonSchema implements \JsonSerializable
 
     public static function pattern(string $phpRegExp): string
     {
-        return preg_replace("(^/|/\w+$)", "", $phpRegExp);
+        return preg_replace("(^/|/\w*$)", "", $phpRegExp);
     }
 }

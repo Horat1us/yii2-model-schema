@@ -231,4 +231,27 @@ class JsonSchemaTest extends TestCase
         $actual = $schema->validator($validator, array_shift($attributes));
         $this->assertEquals($expected, $actual);
     }
+
+    public function patternDataProvider(): array
+    {
+        return [
+            [
+                '/^[А-ЯЄЇЫЁІЪ][а-яєїыёъі\']+(?:-[А-ЯЄЇЫЁІЪ][а-яєїыёъі\']+)?$/u',
+                '^[А-ЯЄЇЫЁІЪ][а-яєїыёъі\']+(?:-[А-ЯЄЇЫЁІЪ][а-яєїыёъі\']+)?$',
+            ],
+            ['^380(([1-9]{2})|(00))\d{7}$', '^380(([1-9]{2})|(00))\d{7}$'],
+            ['/^380(([1-9]{2})|(00))\d{7}$/', '^380(([1-9]{2})|(00))\d{7}$'],
+        ];
+    }
+
+    /**
+     * @dataProvider patternDataProvider
+     */
+    public function testPattern(string $phpRegExp, string $expected): void
+    {
+        $this->assertEquals(
+            $expected,
+            JsonSchema::pattern($phpRegExp)
+        );
+    }
 }
