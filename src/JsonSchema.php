@@ -133,7 +133,7 @@ class JsonSchema implements \JsonSerializable
         } elseif ($validator instanceof validators\RegularExpressionValidator) {
             return [
                 'type' => 'string',
-                'pattern' => preg_replace("(^/|/\w+$)", "", $validator->pattern),
+                'pattern' => static::pattern($validator->pattern),
             ];
         } elseif ($validator instanceof validators\DateValidator) {
             $schema = [
@@ -154,5 +154,10 @@ class JsonSchema implements \JsonSerializable
         }
 
         return [];
+    }
+
+    public static function pattern(string $phpRegExp): string
+    {
+        return preg_replace("(^/|/\w+$)", "", $phpRegExp);
     }
 }
