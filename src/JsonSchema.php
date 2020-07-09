@@ -24,6 +24,10 @@ class JsonSchema implements \JsonSerializable
         ];
         $properties = [];
         $required = [];
+        $examples = [];
+        if ($this->model instanceof Model\AttributesExamples) {
+            $examples = $this->model->attributesExamples();
+        }
         $attributes = $this->model->activeAttributes();
         $validators = $this->model->getActiveValidators();
         $hints = $this->model->attributeHints();
@@ -31,6 +35,9 @@ class JsonSchema implements \JsonSerializable
             $property = [
                 'title' => $this->model->getAttributeLabel($attribute),
             ];
+            if (array_key_exists($attribute, $examples)) {
+                $property['examples'] = $examples[$attribute];
+            }
             if (array_key_exists($attribute, $hints)) {
                 $property['description'] = $hints[$attribute];
             }
@@ -63,6 +70,11 @@ class JsonSchema implements \JsonSerializable
         ];
         if ($hint = $this->model->getAttributeHint($name)) {
             $schema['description'] = $hint;
+        }
+        if ($this->model instanceof Model\AttributesExamples
+            && ($examples = $this->model->getAttributeExamples($name))
+        ) {
+            $schema['examples'] = $examples;
         }
         return array_reduce(
             $this->model->getActiveValidators($name),

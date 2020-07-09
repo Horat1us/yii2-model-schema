@@ -3,6 +3,8 @@
 namespace Horat1us\Yii\Tests;
 
 use Horat1us\Yii\JsonSchema;
+use Horat1us\Yii\Model\AttributesExamples;
+use Horat1us\Yii\Model\AttributesExamplesTrait;
 use Horat1us\Yii\Model\AttributeValuesLabels;
 use PHPUnit\Framework\TestCase;
 use yii\base;
@@ -14,7 +16,9 @@ class JsonSchemaTest extends TestCase
     public function modelDataProvider(): array
     {
         return [
-            [new class extends base\Model {
+            [new class extends base\Model implements AttributesExamples {
+                use AttributesExamplesTrait;
+
                 public string $str = 'testCase';
                 public ?int $num = null;
 
@@ -38,6 +42,13 @@ class JsonSchemaTest extends TestCase
                         'num' => 'This is Number!',
                     ];
                 }
+
+                public function attributesExamples(): array
+                {
+                    return [
+                        'num' => [1, 2],
+                    ];
+                }
             }, [
                 '$schema' => 'http://json-schema.org/draft-07/schema#',
                 'title' => 'Test Form',
@@ -51,6 +62,7 @@ class JsonSchemaTest extends TestCase
                         'title' => 'Num',
                         'type' => 'integer',
                         'description' => 'This is Number!',
+                        'examples' => [1, 2,],
                     ],
                 ],
                 'required' => [
@@ -73,7 +85,9 @@ class JsonSchemaTest extends TestCase
     public function attributeDataProvider(): array
     {
         return [
-            [new class extends base\Model {
+            [new class extends base\Model implements AttributesExamples {
+                use AttributesExamplesTrait;
+
                 public string $str = 'testCase';
 
                 public function rules(): array
@@ -90,12 +104,20 @@ class JsonSchemaTest extends TestCase
                         'str' => 'This is str!',
                     ];
                 }
+
+                public function attributesExamples(): array
+                {
+                    return [
+                        'str' => ['White', 'Black',],
+                    ];
+                }
             }, 'str', [
                 '$schema' => 'http://json-schema.org/draft-07/schema#',
                 'title' => 'Str',
                 'type' => 'string',
                 'description' => 'This is str!',
                 'minLength' => 4,
+                'examples' => ['White', 'Black',],
                 'default' => 'Slavic',
             ]],
         ];
