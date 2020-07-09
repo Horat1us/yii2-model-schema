@@ -7,6 +7,7 @@ namespace Horat1us\Yii\Model;
  * It will be used when Json Schema will be generated.
  * @since 1.1.0
  * @author Alexander Letnikow <reclamme@gmail.com>
+ * @
  */
 interface AttributesExamples
 {
@@ -21,13 +22,13 @@ interface AttributesExamples
      * ```
      *
      * @see https://json-schema.org/understanding-json-schema/reference/generic.html?highlight=examples
-     * @return string[][]
+     * @return array<string, array<int, string>|null>
      */
     public function attributesExamples(): array;
 
     /**
      * Returns the examples for the specified attribute.
-     * @return string[]|null
+     * @return array<int, string>|null
      */
     public function getAttributeExamples(string $attribute): ?array;
 

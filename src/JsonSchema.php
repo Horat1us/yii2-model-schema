@@ -35,7 +35,7 @@ class JsonSchema implements \JsonSerializable
                 $property['description'] = $hints[$attribute];
             }
             foreach ($validators as $validator) {
-                if (!in_array($attribute, $validator->attributes)) {
+                if (!in_array($attribute, (array)$validator->attributes)) {
                     continue;
                 }
                 if ($validator instanceof validators\RequiredValidator) {
@@ -99,7 +99,8 @@ class JsonSchema implements \JsonSerializable
                     $values = call_user_func($values, $this->model, $name);
                 }
             }
-            if (!($this->model instanceof Model\AttributeValuesLabels)
+            if (is_null($name)
+                || !($this->model instanceof Model\AttributeValuesLabels)
                 || !($labels = $this->model->attributeValuesLabels($name))
                 || !array_reduce(
                     $values,
@@ -123,10 +124,10 @@ class JsonSchema implements \JsonSerializable
             $schema = [
                 'type' => $validator->integerOnly ? 'integer' : 'number'
             ];
-            if (!is_null($validator->min)) {
+            if (!is_null($validator->min)) { /** @phpstan-ignore-line */
                 $schema['minimum'] = $validator->min;
             }
-            if (!is_null($validator->max)) {
+            if (!is_null($validator->max)) { /** @phpstan-ignore-line */
                 $schema['maximum'] = $validator->max;
             }
             return $schema;
@@ -158,6 +159,6 @@ class JsonSchema implements \JsonSerializable
 
     public static function pattern(string $phpRegExp): string
     {
-        return preg_replace("(^/|/\w*$)", "", $phpRegExp);
+        return preg_replace("(^/|/\w*$)", "", $phpRegExp) ?? $phpRegExp;
     }
 }

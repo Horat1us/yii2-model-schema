@@ -227,7 +227,7 @@ class JsonSchemaTest extends TestCase
     public function testValidator(base\Model $model, validators\Validator $validator, array $expected): void
     {
         $schema = new JsonSchema($model);
-        $attributes = $validator->attributes;
+        $attributes = (array)$validator->attributes;
         $actual = $schema->validator($validator, array_shift($attributes));
         $this->assertEquals($expected, $actual);
     }
