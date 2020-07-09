@@ -80,6 +80,7 @@ class JsonSchemaTest extends TestCase
                 {
                     return [
                         [['str',], 'string', 'min' => 4,],
+                        [['str',], 'default', 'value' => 'Slavic',]
                     ];
                 }
 
@@ -95,6 +96,7 @@ class JsonSchemaTest extends TestCase
                 'type' => 'string',
                 'description' => 'This is str!',
                 'minLength' => 4,
+                'default' => 'Slavic',
             ]],
         ];
     }
@@ -217,6 +219,11 @@ class JsonSchemaTest extends TestCase
             }, [
                 'type' => 'string',
                 'format' => 'inn',
+            ]],
+            [$model, new validators\DefaultValueValidator([
+                'value' => 'Whitelist',
+            ]), [
+                'default' => 'Whitelist',
             ]],
         ];
     }

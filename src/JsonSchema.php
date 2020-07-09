@@ -152,6 +152,10 @@ class JsonSchema implements \JsonSerializable
             ];
         } elseif ($validator instanceof Validation\JsonSchema) {
             return $validator->getJsonSchema();
+        } elseif ($validator instanceof validators\DefaultValueValidator) {
+            return [
+                'default' => $validator->value,
+            ];
         }
 
         return [];
