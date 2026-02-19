@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Horat1us\Yii\Model;
 
@@ -9,6 +11,7 @@ namespace Horat1us\Yii\Model;
  */
 trait AttributesExamplesTrait
 {
+    /** @return array<string, array<int, mixed>|null> */
     abstract public function attributesExamples(): array;
 
     public function getAttributeExamples(string $attribute): ?array
@@ -22,6 +25,10 @@ trait AttributesExamplesTrait
     public function getAttributeExample(string $attribute): ?string
     {
         $examples = $this->getAttributeExamples($attribute);
-        return $examples ? array_shift($examples) : null;
+        if (!$examples) {
+            return null;
+        }
+        $first = array_shift($examples);
+        return is_string($first) ? $first : null;
     }
 }

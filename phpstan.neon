@@ -3,4 +3,9 @@ parameters:
 	paths:
 		- src
 		- tests
-	checkMissingIterableValueType: false
+	ignoreErrors:
+		- identifier: missingType.iterableValue
+		  paths:
+		  	- tests
+		- identifier: function.alreadyNarrowedType
+		- identifier: function.impossibleType
