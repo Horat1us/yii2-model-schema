@@ -10,7 +10,7 @@ Create JSON Schema from Yii2 Model using validation rules and other public metho
 ## Installation
 Using composer:
 ```bash
-composer require horat1us/yii2-model-schema:^1.0
+composer require horat1us/yii2-model-schema:^2.0
 ```
 
 ## Usage
