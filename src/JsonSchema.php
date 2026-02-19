@@ -49,7 +49,9 @@ class JsonSchema implements \JsonSerializable
                     continue;
                 }
                 if ($validator instanceof validators\RequiredValidator) {
-                    $required[] = $attribute;
+                    if ($validator->when === null || call_user_func($validator->when, $this->model, $attribute)) {
+                        $required[] = $attribute;
+                    }
                     continue;
                 }
                 $property += $this->validator($validator, $attribute);

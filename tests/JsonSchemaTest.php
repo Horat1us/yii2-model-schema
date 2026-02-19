@@ -72,6 +72,59 @@ class JsonSchemaTest extends TestCase
                     'str',
                 ],
             ]],
+            [new class extends base\Model {
+                public string $passport_type = 'idcard';
+                public string $passport_number = '';
+
+                public function formName(): string
+                {
+                    return "ConditionalForm";
+                }
+
+                public function rules(): array
+                {
+                    return [
+                        [['passport_type'], 'safe'],
+                        [['passport_number'], 'required',
+                            'when' => fn(base\Model $model, string $attribute): bool => false],
+                    ];
+                }
+            }, [
+                '$schema' => 'http://json-schema.org/draft-07/schema#',
+                'title' => 'Conditional Form',
+                'type' => 'object',
+                'properties' => [
+                    'passport_type' => ['title' => 'Passport Type'],
+                    'passport_number' => ['title' => 'Passport Number'],
+                ],
+            ]],
+            [new class extends base\Model {
+                public string $passport_type = 'legacy';
+                public string $passport_number = '';
+
+                public function formName(): string
+                {
+                    return "ConditionalForm";
+                }
+
+                public function rules(): array
+                {
+                    return [
+                        [['passport_type'], 'safe'],
+                        [['passport_number'], 'required',
+                            'when' => fn(base\Model $model, string $attribute): bool => true],
+                    ];
+                }
+            }, [
+                '$schema' => 'http://json-schema.org/draft-07/schema#',
+                'title' => 'Conditional Form',
+                'type' => 'object',
+                'properties' => [
+                    'passport_type' => ['title' => 'Passport Type'],
+                    'passport_number' => ['title' => 'Passport Number'],
+                ],
+                'required' => ['passport_number'],
+            ]],
         ];
     }
 
