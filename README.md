@@ -51,6 +51,32 @@ echo $model->getAttributeExample('b'); // null
 echo $model->getAttributeExample('c'); // null
 ```
 
+## Conditional Required Fields
+
+When a `RequiredValidator` has a `when` callable, `JsonSchema` evaluates it
+against the model at schema-generation time. Only attributes whose `when`
+returns `true` (or have no `when`) appear in the `required` array.
+
+```php
+$model = new class extends base\Model {
+    public string $passport_type = 'idcard';
+    public string $passport_number = '';
+    public string $idcard_number = '';
+
+    public function rules(): array {
+        return [
+            [['passport_number'], 'required',
+             'when' => fn(base\Model $m): bool => $m->passport_type === 'legacy'],
+            [['idcard_number'], 'required',
+             'when' => fn(base\Model $m): bool => $m->passport_type === 'idcard'],
+        ];
+    }
+};
+// passport_type is 'idcard' → only idcard_number in required
+$schema = (new JsonSchema($model))->jsonSerialize();
+// $schema['required'] === ['idcard_number']
+```
+
 ## TODO
 Write docs:
 - [JsonSchema](./src/JsonSchema.php)
