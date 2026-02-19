@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Horat1us\Yii;
 
@@ -15,6 +17,7 @@ class JsonSchema implements \JsonSerializable
         $this->model = $model;
     }
 
+    /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
         $schema = [
@@ -62,6 +65,7 @@ class JsonSchema implements \JsonSerializable
         return $schema;
     }
 
+    /** @return array<string, mixed> */
     public function attribute(string $name): array
     {
         $schema = [
@@ -71,21 +75,26 @@ class JsonSchema implements \JsonSerializable
         if ($hint = $this->model->getAttributeHint($name)) {
             $schema['description'] = $hint;
         }
-        if ($this->model instanceof Model\AttributesExamples
+        if (
+            $this->model instanceof Model\AttributesExamples
             && ($examples = $this->model->getAttributeExamples($name))
         ) {
             $schema['examples'] = $examples;
         }
-        return array_reduce(
+        /** @var array<string, mixed> $result */
+        $result = array_reduce(
             $this->model->getActiveValidators($name),
             fn(array $schema, validators\Validator $v) => $schema + $this->validator($v, $name),
             $schema,
         );
+        return $result;
     }
 
-    public function validator(validators\Validator $validator, string $name = null): array
+    /** @return array<string, mixed> */
+    public function validator(validators\Validator $validator, ?string $name = null): array
     {
-        if ($validator instanceof validators\RequiredValidator
+        if (
+            $validator instanceof validators\RequiredValidator
             || $validator instanceof validators\FilterValidator
             || $validator instanceof validators\InlineValidator
         ) {
@@ -106,12 +115,14 @@ class JsonSchema implements \JsonSerializable
                     if ($reflection->getNumberOfRequiredParameters() !== 0) {
                         return ['enum' => [],];
                     }
-                    $values = call_user_func($values);
+                    $values = (array) call_user_func($values);
                 } else {
-                    $values = call_user_func($values, $this->model, $name);
+                    $values = (array) call_user_func($values, $this->model, $name);
                 }
             }
-            if (is_null($name)
+            $values = (array) $values;
+            if (
+                is_null($name)
                 || !($this->model instanceof Model\AttributeValuesLabels)
                 || !($labels = $this->model->attributeValuesLabels($name))
                 || !array_reduce(
@@ -127,7 +138,10 @@ class JsonSchema implements \JsonSerializable
                 ];
             } else {
                 $oneOf = array_map(
-                    fn($value) => ['const' => $value, 'title' => $labels[$value]],
+                    function ($value) use ($labels): array {
+                        /** @var string|int $value */
+                        return ['const' => $value, 'title' => $labels[$value]];
+                    },
                     $values
                 );
                 return compact('oneOf');
@@ -136,10 +150,10 @@ class JsonSchema implements \JsonSerializable
             $schema = [
                 'type' => $validator->integerOnly ? 'integer' : 'number'
             ];
-            if (!is_null($validator->min)) { /** @phpstan-ignore-line */
+            if (!is_null($validator->min)) {
                 $schema['minimum'] = $validator->min;
             }
-            if (!is_null($validator->max)) { /** @phpstan-ignore-line */
+            if (!is_null($validator->max)) {
                 $schema['maximum'] = $validator->max;
             }
             return $schema;

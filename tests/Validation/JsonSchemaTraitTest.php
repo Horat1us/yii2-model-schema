@@ -1,13 +1,16 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Horat1us\Yii\Tests\Validation;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Horat1us\Yii;
 
 class JsonSchemaTraitTest extends TestCase
 {
-    public function dataProvider(): array
+    public static function dataProvider(): array
     {
         return [
             [$hasSchema = new class implements Yii\Validation\JsonSchema {
@@ -27,9 +30,7 @@ class JsonSchemaTraitTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider dataProvider
-     */
+    #[DataProvider('dataProvider')]
     public function testGetJsonSchema(Yii\Validation\JsonSchema $validator, array $jsonSchema): void
     {
         $this->assertEquals($jsonSchema, $validator->getJsonSchema());

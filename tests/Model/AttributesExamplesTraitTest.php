@@ -1,13 +1,15 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Horat1us\Yii\Tests\Model;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Horat1us\Yii\Model;
 
-/**
- * @coversDefaultClass \Horat1us\Yii\Model\AttributesExamplesTrait
- */
+#[CoversClass(Model\AttributesExamplesTrait::class)]
 class AttributesExamplesTraitTest extends TestCase
 {
     public Model\AttributesExamples $model;
@@ -29,7 +31,7 @@ class AttributesExamplesTraitTest extends TestCase
         };
     }
 
-    public function examplesDataProvider(): array
+    public static function examplesDataProvider(): array
     {
         return [
             ['real', ['first', 'second',],],
@@ -39,11 +41,8 @@ class AttributesExamplesTraitTest extends TestCase
         ];
     }
 
-    /**
-     * @covers       \Horat1us\Yii\Model\AttributesExamplesTrait::getAttributeExamples
-     * @dataProvider examplesDataProvider
-     */
-    public function testGetAttributeExamples(string $attribute, array $expected = null): void
+    #[DataProvider('examplesDataProvider')]
+    public function testGetAttributeExamples(string $attribute, ?array $expected = null): void
     {
         $this->assertEquals(
             $this->model->getAttributeExamples($attribute),
@@ -51,7 +50,7 @@ class AttributesExamplesTraitTest extends TestCase
         );
     }
 
-    public function exampleDataProvider(): array
+    public static function exampleDataProvider(): array
     {
         return [
             ['real', 'first',],
@@ -61,11 +60,8 @@ class AttributesExamplesTraitTest extends TestCase
         ];
     }
 
-    /**
-     * @covers       \Horat1us\Yii\Model\AttributesExamplesTrait::getAttributeExample
-     * @dataProvider exampleDataProvider
-     */
-    public function testGetAttributeExample(string $attribute, string $expected = null): void
+    #[DataProvider('exampleDataProvider')]
+    public function testGetAttributeExample(string $attribute, ?string $expected = null): void
     {
         $this->assertEquals(
             $this->model->getAttributeExample($attribute),

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Horat1us\Yii\Tests;
 
@@ -6,6 +8,7 @@ use Horat1us\Yii\JsonSchema;
 use Horat1us\Yii\Model\AttributesExamples;
 use Horat1us\Yii\Model\AttributesExamplesTrait;
 use Horat1us\Yii\Model\AttributeValuesLabels;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use yii\base;
 use yii\validators;
@@ -13,7 +16,7 @@ use Horat1us\Yii\Validation;
 
 class JsonSchemaTest extends TestCase
 {
-    public function modelDataProvider(): array
+    public static function modelDataProvider(): array
     {
         return [
             [new class extends base\Model implements AttributesExamples {
@@ -72,9 +75,7 @@ class JsonSchemaTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider modelDataProvider
-     */
+    #[DataProvider('modelDataProvider')]
     public function testJsonSerialize(base\Model $model, array $expected): void
     {
         $schema = new JsonSchema($model);
@@ -82,7 +83,7 @@ class JsonSchemaTest extends TestCase
         $this->assertEquals($expected, $actual);
     }
 
-    public function attributeDataProvider(): array
+    public static function attributeDataProvider(): array
     {
         return [
             [new class extends base\Model implements AttributesExamples {
@@ -123,9 +124,7 @@ class JsonSchemaTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider attributeDataProvider
-     */
+    #[DataProvider('attributeDataProvider')]
     public function testAttribute(base\Model $model, string $attribute, array $expected): void
     {
         $schema = new JsonSchema($model);
@@ -133,11 +132,11 @@ class JsonSchemaTest extends TestCase
         $this->assertEquals($expected, $actual);
     }
 
-    public function validatorDataProvider(): array
+    public static function validatorDataProvider(): array
     {
         $model = new base\Model();
         return [
-            [$model, new validators\RequiredValidator, [],],
+            [$model, new validators\RequiredValidator(), [],],
             [$model, new validators\FilterValidator(['filter' => fn() => null]), [],],
             [$model, new validators\InlineValidator(), [],],
             [$model, new validators\RangeValidator([
@@ -151,8 +150,8 @@ class JsonSchemaTest extends TestCase
             ]), ['enum' => [],]],
             [$rangeModel = new base\DynamicModel(['atr']), $rangeValidator = new validators\RangeValidator([
                 'range' => function (base\Model $m, string $attribute) use ($rangeModel) {
-                    $this->assertEquals($rangeModel, $m);
-                    $this->assertEquals('atr', $attribute);
+                    \PHPUnit\Framework\Assert::assertEquals($rangeModel, $m);
+                    \PHPUnit\Framework\Assert::assertEquals('atr', $attribute);
                     return [1, 2,];
                 },
                 'attributes' => ['atr',],
@@ -164,7 +163,6 @@ class JsonSchemaTest extends TestCase
             ],],
             [
                 new class extends base\Model implements AttributeValuesLabels {
-
                     public function attributeValuesLabels(string $attribute): ?array
                     {
                         return [
@@ -229,7 +227,11 @@ class JsonSchemaTest extends TestCase
                 'type' => 'string',
                 'format' => 'email',
             ]],
-            [$model, $this->createMock(validators\Validator::class), []],
+            [$model, new class extends validators\Validator {
+                public function validateAttribute($model, $attribute): void
+                {
+                }
+            }, []],
             [$model, new class extends validators\Validator implements Validation\JsonSchema {
                 public function getJsonSchema(): array
                 {
@@ -250,18 +252,17 @@ class JsonSchemaTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider validatorDataProvider
-     */
+    #[DataProvider('validatorDataProvider')]
     public function testValidator(base\Model $model, validators\Validator $validator, array $expected): void
     {
         $schema = new JsonSchema($model);
         $attributes = (array)$validator->attributes;
-        $actual = $schema->validator($validator, array_shift($attributes));
+        $name = array_shift($attributes);
+        $actual = $schema->validator($validator, is_string($name) ? $name : null);
         $this->assertEquals($expected, $actual);
     }
 
-    public function patternDataProvider(): array
+    public static function patternDataProvider(): array
     {
         return [
             [
@@ -273,9 +274,7 @@ class JsonSchemaTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider patternDataProvider
-     */
+    #[DataProvider('patternDataProvider')]
     public function testPattern(string $phpRegExp, string $expected): void
     {
         $this->assertEquals(
