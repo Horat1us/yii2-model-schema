@@ -276,6 +276,26 @@ class JsonSchemaTest extends TestCase
                 'type' => 'string',
                 'format' => 'date-time',
             ]],
+            [$model, new validators\BooleanValidator(), [
+                'type' => 'boolean',
+            ]],
+            [$model, new validators\UrlValidator(), [
+                'type' => 'string',
+                'format' => 'uri',
+            ]],
+            [$model, new validators\StringValidator(['max' => 1000]), [
+                'type' => 'string',
+                'maxLength' => 1000,
+                'format' => 'textarea',
+            ]],
+            [$model, new validators\StringValidator(['max' => 255]), [
+                'type' => 'string',
+                'maxLength' => 255,
+            ]],
+            [$model, new validators\StringValidator(['max' => 100]), [
+                'type' => 'string',
+                'maxLength' => 100,
+            ]],
             [$model, new validators\EmailValidator(), [
                 'type' => 'string',
                 'format' => 'email',

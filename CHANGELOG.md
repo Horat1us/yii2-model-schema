@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `BooleanValidator` now maps to `{type: "boolean"}`.
+- `UrlValidator` now maps to `{type: "string", format: "uri"}`.
+- `StringValidator` with `max > 255` now includes `format: "textarea"` as a UI hint.
+  Strings with no max or `max <= 255` are unaffected.
+
 ## [2.0.0] - 2026-02-19
 
 ### Added
