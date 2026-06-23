@@ -104,11 +104,17 @@ class JsonSchema implements \JsonSerializable
         }
         if ($validator instanceof validators\StringValidator) {
             $length = (array)$validator->length;
+            $max = $length[1] ?? $validator->max;
             return array_filter([
                 'type' => 'string',
                 'minLength' => $length[0] ?? $validator->min,
-                'maxLength' => $length[1] ?? $validator->max,
+                'maxLength' => $max,
+                'format' => $max !== null && $max > 255 ? 'textarea' : null,
             ]);
+        } elseif ($validator instanceof validators\BooleanValidator) {
+            return ['type' => 'boolean'];
+        } elseif ($validator instanceof validators\UrlValidator) {
+            return ['type' => 'string', 'format' => 'uri'];
         } elseif ($validator instanceof validators\RangeValidator) {
             $values = $validator->range;
             if ($values instanceof \Closure) {
