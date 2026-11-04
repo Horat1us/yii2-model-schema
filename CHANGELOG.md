@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0]
+
+### Added
+- `EachValidator` now maps to `{type: "array", items: …}`, where `items` is the schema of the rule
+  each element is validated with (`string`, `in` with labels, `integer`, a nested `each`, …).
+  `items` is left out when that rule maps to nothing.
+- README: the validator → schema mapping.
+
+### Changed
+- `RangeValidator` with `allowArray` now maps to
+  `{type: "array", uniqueItems: true, items: {oneOf: […]}}` (or `items: {enum: […]}` without labels).
+  It used to map to the single-value `oneOf`/`enum`, which doesn't describe the array the rule accepts.
+  `RangeValidator` without `allowArray`, including subclasses with a closure range, is unchanged.
+
 ## [2.1.0]
 
 ### Added

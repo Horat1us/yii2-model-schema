@@ -139,6 +139,65 @@ class JsonSchemaTest extends TestCase
     public static function attributeDataProvider(): array
     {
         return [
+            [new class extends base\Model {
+                /** @var string[] */
+                public array $channels = [];
+
+                public function rules(): array
+                {
+                    return [
+                        [['channels'], 'in', 'range' => ['email', 'sms'], 'allowArray' => true],
+                        [['channels'], 'filter', 'filter' => 'array_values'],
+                    ];
+                }
+            }, 'channels', [
+                '$schema' => 'http://json-schema.org/draft-07/schema#',
+                'title' => 'Channels',
+                'type' => 'array',
+                'uniqueItems' => true,
+                'items' => ['enum' => ['email', 'sms']],
+            ]],
+            [new class extends base\Model implements AttributeValuesLabels {
+                /** @var string[] */
+                public array $channels = [];
+
+                public function rules(): array
+                {
+                    return [
+                        [['channels'], 'in', 'range' => ['email', 'sms'], 'allowArray' => true],
+                    ];
+                }
+
+                public function attributeValuesLabels(string $attribute): ?array
+                {
+                    return ['channels' => ['email' => 'Email', 'sms' => 'SMS']][$attribute] ?? null;
+                }
+            }, 'channels', [
+                '$schema' => 'http://json-schema.org/draft-07/schema#',
+                'title' => 'Channels',
+                'type' => 'array',
+                'uniqueItems' => true,
+                'items' => ['oneOf' => [
+                    ['const' => 'email', 'title' => 'Email'],
+                    ['const' => 'sms', 'title' => 'SMS'],
+                ]],
+            ]],
+            [new class extends base\Model {
+                /** @var string[] */
+                public array $mediums = [];
+
+                public function rules(): array
+                {
+                    return [
+                        [['mediums'], 'each', 'rule' => ['string', 'max' => 255]],
+                    ];
+                }
+            }, 'mediums', [
+                '$schema' => 'http://json-schema.org/draft-07/schema#',
+                'title' => 'Mediums',
+                'type' => 'array',
+                'items' => ['type' => 'string', 'maxLength' => 255],
+            ]],
             [new class extends base\Model implements AttributesExamples {
                 use AttributesExamplesTrait;
 
@@ -322,7 +381,97 @@ class JsonSchemaTest extends TestCase
             ]), [
                 'default' => 'Whitelist',
             ]],
+            [$model, new validators\RangeValidator([
+                'range' => ['a', 'b',],
+                'allowArray' => true,
+            ]), [
+                'type' => 'array',
+                'uniqueItems' => true,
+                'items' => ['enum' => ['a', 'b',]],
+            ]],
+            [$model, new validators\RangeValidator([
+                'range' => fn() => ['a', 'b',],
+                'allowArray' => true,
+            ]), [
+                'type' => 'array',
+                'uniqueItems' => true,
+                'items' => ['enum' => ['a', 'b',]],
+            ]],
+            [self::labelsModel(), new validators\RangeValidator([
+                'range' => ['email', 'sms',],
+                'allowArray' => true,
+                'attributes' => 'channels',
+            ]), [
+                'type' => 'array',
+                'uniqueItems' => true,
+                'items' => ['oneOf' => [
+                    ['const' => 'email', 'title' => 'Email'],
+                    ['const' => 'sms', 'title' => 'SMS'],
+                ]],
+            ]],
+            [self::labelsModel(), new validators\RangeValidator([
+                'range' => ['email', 'unknown',],
+                'allowArray' => true,
+                'attributes' => 'channels',
+            ]), [
+                'type' => 'array',
+                'uniqueItems' => true,
+                'items' => ['enum' => ['email', 'unknown',]],
+            ]],
+            [$model, new validators\EachValidator([
+                'rule' => ['string', 'max' => 64,],
+            ]), [
+                'type' => 'array',
+                'items' => ['type' => 'string', 'maxLength' => 64,],
+            ]],
+            [$model, new validators\EachValidator([
+                'rule' => ['integer', 'min' => 1,],
+            ]), [
+                'type' => 'array',
+                'items' => ['type' => 'integer', 'minimum' => 1,],
+            ]],
+            [self::labelsModel(), new validators\EachValidator([
+                'rule' => ['in', 'range' => ['email', 'sms',],],
+                'attributes' => 'channels',
+            ]), [
+                'type' => 'array',
+                'items' => ['oneOf' => [
+                    ['const' => 'email', 'title' => 'Email'],
+                    ['const' => 'sms', 'title' => 'SMS'],
+                ]],
+            ]],
+            [$model, new validators\EachValidator([
+                'rule' => ['each', 'rule' => ['email',],],
+            ]), [
+                'type' => 'array',
+                'items' => ['type' => 'array', 'items' => ['type' => 'string', 'format' => 'email',],],
+            ]],
+            [$model, new validators\EachValidator([
+                'rule' => ['safe',],
+            ]), [
+                'type' => 'array',
+            ]],
+            [$model, new validators\EachValidator([
+                'rule' => ['trim',],
+            ]), [
+                'type' => 'array',
+            ]],
         ];
+    }
+
+    private static function labelsModel(): base\Model
+    {
+        return new class extends base\Model implements AttributeValuesLabels {
+            public function attributeValuesLabels(string $attribute): ?array
+            {
+                return [
+                    'channels' => [
+                        'email' => 'Email',
+                        'sms' => 'SMS',
+                    ],
+                ][$attribute] ?? null;
+            }
+        };
     }
 
     #[DataProvider('validatorDataProvider')]
