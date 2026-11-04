@@ -116,44 +116,17 @@ class JsonSchema implements \JsonSerializable
         } elseif ($validator instanceof validators\UrlValidator) {
             return ['type' => 'string', 'format' => 'uri'];
         } elseif ($validator instanceof validators\RangeValidator) {
-            $values = $validator->range;
-            if ($values instanceof \Closure) {
-                if (is_null($name)) {
-                    $reflection = new \ReflectionFunction($values);
-                    if ($reflection->getNumberOfRequiredParameters() !== 0) {
-                        return ['enum' => [],];
-                    }
-                    $values = (array) call_user_func($values);
-                } else {
-                    $values = (array) call_user_func($values, $this->model, $name);
-                }
-            }
-            $values = (array) $values;
-            if (
-                is_null($name)
-                || !($this->model instanceof Model\AttributeValuesLabels)
-                || !($labels = $this->model->attributeValuesLabels($name))
-                || !array_reduce(
-                    $values,
-                    fn($result, $value) => $result
-                        && (is_string($value) || is_int($value))
-                        && array_key_exists($value, $labels),
-                    true
-                )
-            ) {
+            $schema = $this->range($validator, $name);
+            if ($validator->allowArray) {
                 return [
-                    'enum' => $values,
+                    'type' => 'array',
+                    'uniqueItems' => true,
+                    'items' => $schema,
                 ];
-            } else {
-                $oneOf = array_map(
-                    function ($value) use ($labels): array {
-                        /** @var string|int $value */
-                        return ['const' => $value, 'title' => $labels[$value]];
-                    },
-                    $values
-                );
-                return compact('oneOf');
             }
+            return $schema;
+        } elseif ($validator instanceof validators\EachValidator) {
+            return $this->each($validator, $name);
         } elseif ($validator instanceof validators\NumberValidator) {
             $schema = [
                 'type' => $validator->integerOnly ? 'integer' : 'number'
@@ -193,6 +166,82 @@ class JsonSchema implements \JsonSerializable
         }
 
         return [];
+    }
+
+    /**
+     * A value of the range: `oneOf` with labels when the model labels every value, `enum` otherwise.
+     *
+     * @return array<string, mixed>
+     */
+    private function range(validators\RangeValidator $validator, ?string $name): array
+    {
+        $values = $validator->range;
+        if ($values instanceof \Closure) {
+            if (is_null($name)) {
+                $reflection = new \ReflectionFunction($values);
+                if ($reflection->getNumberOfRequiredParameters() !== 0) {
+                    return ['enum' => [],];
+                }
+                $values = (array) call_user_func($values);
+            } else {
+                $values = (array) call_user_func($values, $this->model, $name);
+            }
+        }
+        $values = (array) $values;
+        if (
+            is_null($name)
+            || !($this->model instanceof Model\AttributeValuesLabels)
+            || !($labels = $this->model->attributeValuesLabels($name))
+            || !array_reduce(
+                $values,
+                fn($result, $value) => $result
+                    && (is_string($value) || is_int($value))
+                    && array_key_exists($value, $labels),
+                true
+            )
+        ) {
+            return [
+                'enum' => $values,
+            ];
+        }
+        $oneOf = array_map(
+            function ($value) use ($labels): array {
+                /** @var string|int $value */
+                return ['const' => $value, 'title' => $labels[$value]];
+            },
+            $values
+        );
+        return compact('oneOf');
+    }
+
+    /**
+     * An array whose `items` are described by the rule each element is validated with.
+     * `items` is left out when that rule maps to nothing.
+     *
+     * @return array<string, mixed>
+     */
+    private function each(validators\EachValidator $validator, ?string $name): array
+    {
+        $schema = ['type' => 'array'];
+        $rule = $validator->rule;
+        if (!is_array($rule) || !isset($rule[0])) {
+            return $schema;
+        }
+        /** @var string|\Closure $type */
+        $type = $rule[0];
+        $item = $this->validator(
+            validators\Validator::createValidator(
+                $type,
+                $this->model,
+                (array) $validator->attributes,
+                array_slice($rule, 1),
+            ),
+            $name,
+        );
+        if (count($item)) {
+            $schema['items'] = $item;
+        }
+        return $schema;
     }
 
     public static function pattern(string $phpRegExp): string

@@ -139,6 +139,65 @@ class JsonSchemaTest extends TestCase
     public static function attributeDataProvider(): array
     {
         return [
+            [new class extends base\Model {
+                /** @var string[] */
+                public array $audiences = [];
+
+                public function rules(): array
+                {
+                    return [
+                        [['audiences'], 'in', 'range' => ['borrowers', 'partners'], 'allowArray' => true],
+                        [['audiences'], 'filter', 'filter' => 'array_values'],
+                    ];
+                }
+            }, 'audiences', [
+                '$schema' => 'http://json-schema.org/draft-07/schema#',
+                'title' => 'Audiences',
+                'type' => 'array',
+                'uniqueItems' => true,
+                'items' => ['enum' => ['borrowers', 'partners']],
+            ]],
+            [new class extends base\Model implements AttributeValuesLabels {
+                /** @var string[] */
+                public array $audiences = [];
+
+                public function rules(): array
+                {
+                    return [
+                        [['audiences'], 'in', 'range' => ['borrowers', 'partners'], 'allowArray' => true],
+                    ];
+                }
+
+                public function attributeValuesLabels(string $attribute): ?array
+                {
+                    return ['audiences' => ['borrowers' => 'Borrowers', 'partners' => 'Partners']][$attribute] ?? null;
+                }
+            }, 'audiences', [
+                '$schema' => 'http://json-schema.org/draft-07/schema#',
+                'title' => 'Audiences',
+                'type' => 'array',
+                'uniqueItems' => true,
+                'items' => ['oneOf' => [
+                    ['const' => 'borrowers', 'title' => 'Borrowers'],
+                    ['const' => 'partners', 'title' => 'Partners'],
+                ]],
+            ]],
+            [new class extends base\Model {
+                /** @var string[] */
+                public array $mediums = [];
+
+                public function rules(): array
+                {
+                    return [
+                        [['mediums'], 'each', 'rule' => ['string', 'max' => 255]],
+                    ];
+                }
+            }, 'mediums', [
+                '$schema' => 'http://json-schema.org/draft-07/schema#',
+                'title' => 'Mediums',
+                'type' => 'array',
+                'items' => ['type' => 'string', 'maxLength' => 255],
+            ]],
             [new class extends base\Model implements AttributesExamples {
                 use AttributesExamplesTrait;
 
@@ -322,7 +381,97 @@ class JsonSchemaTest extends TestCase
             ]), [
                 'default' => 'Whitelist',
             ]],
+            [$model, new validators\RangeValidator([
+                'range' => ['a', 'b',],
+                'allowArray' => true,
+            ]), [
+                'type' => 'array',
+                'uniqueItems' => true,
+                'items' => ['enum' => ['a', 'b',]],
+            ]],
+            [$model, new validators\RangeValidator([
+                'range' => fn() => ['a', 'b',],
+                'allowArray' => true,
+            ]), [
+                'type' => 'array',
+                'uniqueItems' => true,
+                'items' => ['enum' => ['a', 'b',]],
+            ]],
+            [self::labelsModel(), new validators\RangeValidator([
+                'range' => ['borrowers', 'partners',],
+                'allowArray' => true,
+                'attributes' => 'audiences',
+            ]), [
+                'type' => 'array',
+                'uniqueItems' => true,
+                'items' => ['oneOf' => [
+                    ['const' => 'borrowers', 'title' => 'Borrowers'],
+                    ['const' => 'partners', 'title' => 'Partners'],
+                ]],
+            ]],
+            [self::labelsModel(), new validators\RangeValidator([
+                'range' => ['borrowers', 'unknown',],
+                'allowArray' => true,
+                'attributes' => 'audiences',
+            ]), [
+                'type' => 'array',
+                'uniqueItems' => true,
+                'items' => ['enum' => ['borrowers', 'unknown',]],
+            ]],
+            [$model, new validators\EachValidator([
+                'rule' => ['string', 'max' => 64,],
+            ]), [
+                'type' => 'array',
+                'items' => ['type' => 'string', 'maxLength' => 64,],
+            ]],
+            [$model, new validators\EachValidator([
+                'rule' => ['integer', 'min' => 1,],
+            ]), [
+                'type' => 'array',
+                'items' => ['type' => 'integer', 'minimum' => 1,],
+            ]],
+            [self::labelsModel(), new validators\EachValidator([
+                'rule' => ['in', 'range' => ['borrowers', 'partners',],],
+                'attributes' => 'audiences',
+            ]), [
+                'type' => 'array',
+                'items' => ['oneOf' => [
+                    ['const' => 'borrowers', 'title' => 'Borrowers'],
+                    ['const' => 'partners', 'title' => 'Partners'],
+                ]],
+            ]],
+            [$model, new validators\EachValidator([
+                'rule' => ['each', 'rule' => ['email',],],
+            ]), [
+                'type' => 'array',
+                'items' => ['type' => 'array', 'items' => ['type' => 'string', 'format' => 'email',],],
+            ]],
+            [$model, new validators\EachValidator([
+                'rule' => ['safe',],
+            ]), [
+                'type' => 'array',
+            ]],
+            [$model, new validators\EachValidator([
+                'rule' => ['trim',],
+            ]), [
+                'type' => 'array',
+            ]],
         ];
+    }
+
+    private static function labelsModel(): base\Model
+    {
+        return new class extends base\Model implements AttributeValuesLabels {
+            public function attributeValuesLabels(string $attribute): ?array
+            {
+                return [
+                    'audiences' => [
+                        'borrowers' => 'Borrowers',
+                        'partners' => 'Partners',
+                    ],
+                ][$attribute] ?? null;
+            }
+        };
     }
 
     #[DataProvider('validatorDataProvider')]
