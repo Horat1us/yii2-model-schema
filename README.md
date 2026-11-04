@@ -107,13 +107,13 @@ Labels for `in` come from [AttributeValuesLabels](./src/Model/AttributeValuesLab
 ```php
 class Settings extends base\Model implements Model\AttributeValuesLabels
 {
-    public array $audiences = ['borrowers'];
+    public array $channels = ['email'];
     public array $mediums = [];
 
     public function rules(): array
     {
         return [
-            [['audiences'], 'in', 'range' => ['borrowers', 'partners'], 'allowArray' => true],
+            [['channels'], 'in', 'range' => ['email', 'sms'], 'allowArray' => true],
             [['mediums'], 'each', 'rule' => ['string', 'max' => 255]],
         ];
     }
@@ -121,17 +121,17 @@ class Settings extends base\Model implements Model\AttributeValuesLabels
     public function attributeValuesLabels(string $attribute): ?array
     {
         return [
-            'audiences' => ['borrowers' => 'Borrowers', 'partners' => 'Partners'],
+            'channels' => ['email' => 'Email', 'sms' => 'SMS'],
         ][$attribute] ?? null;
     }
 }
 
 (new JsonSchema(new Settings()))->jsonSerialize()['properties'];
-// 'audiences' => [
-//     'title' => 'Audiences', 'type' => 'array', 'uniqueItems' => true,
+// 'channels' => [
+//     'title' => 'Channels', 'type' => 'array', 'uniqueItems' => true,
 //     'items' => ['oneOf' => [
-//         ['const' => 'borrowers', 'title' => 'Borrowers'],
-//         ['const' => 'partners', 'title' => 'Partners'],
+//         ['const' => 'email', 'title' => 'Email'],
+//         ['const' => 'sms', 'title' => 'SMS'],
 //     ]],
 // ],
 // 'mediums' => ['title' => 'Mediums', 'type' => 'array', 'items' => ['type' => 'string', 'maxLength' => 255]],

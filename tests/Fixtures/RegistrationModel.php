@@ -10,8 +10,8 @@ use Horat1us\Yii\Model\AttributeValuesLabels;
 use yii\base;
 
 /**
- * The rule shapes of the borrower registration data (bobra-backend BorrowerRequestData),
- * whose schema the site renders. Its output must not change between releases.
+ * A registration form with the common scalar rule shapes, whose schema a client renders.
+ * Its output must not change between releases.
  */
 class RegistrationModel extends base\Model implements AttributeValuesLabels, AttributesExamples
 {
@@ -33,13 +33,13 @@ class RegistrationModel extends base\Model implements AttributeValuesLabels, Att
 
     public function formName(): string
     {
-        return 'BorrowerRequestData';
+        return 'RegistrationForm';
     }
 
     public function rules(): array
     {
         return [
-            ['first_name', 'required', 'message' => 'Представьтесь, пожалуйста.'],
+            ['first_name', 'required'],
             ['inn', 'required'],
             [['inn'], InnValidator::class, 'when' => fn() => false],
             [['inn'], 'match', 'pattern' => '/^\d{10}$/'],

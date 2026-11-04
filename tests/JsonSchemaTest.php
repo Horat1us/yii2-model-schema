@@ -141,45 +141,45 @@ class JsonSchemaTest extends TestCase
         return [
             [new class extends base\Model {
                 /** @var string[] */
-                public array $audiences = [];
+                public array $channels = [];
 
                 public function rules(): array
                 {
                     return [
-                        [['audiences'], 'in', 'range' => ['borrowers', 'partners'], 'allowArray' => true],
-                        [['audiences'], 'filter', 'filter' => 'array_values'],
+                        [['channels'], 'in', 'range' => ['email', 'sms'], 'allowArray' => true],
+                        [['channels'], 'filter', 'filter' => 'array_values'],
                     ];
                 }
-            }, 'audiences', [
+            }, 'channels', [
                 '$schema' => 'http://json-schema.org/draft-07/schema#',
-                'title' => 'Audiences',
+                'title' => 'Channels',
                 'type' => 'array',
                 'uniqueItems' => true,
-                'items' => ['enum' => ['borrowers', 'partners']],
+                'items' => ['enum' => ['email', 'sms']],
             ]],
             [new class extends base\Model implements AttributeValuesLabels {
                 /** @var string[] */
-                public array $audiences = [];
+                public array $channels = [];
 
                 public function rules(): array
                 {
                     return [
-                        [['audiences'], 'in', 'range' => ['borrowers', 'partners'], 'allowArray' => true],
+                        [['channels'], 'in', 'range' => ['email', 'sms'], 'allowArray' => true],
                     ];
                 }
 
                 public function attributeValuesLabels(string $attribute): ?array
                 {
-                    return ['audiences' => ['borrowers' => 'Borrowers', 'partners' => 'Partners']][$attribute] ?? null;
+                    return ['channels' => ['email' => 'Email', 'sms' => 'SMS']][$attribute] ?? null;
                 }
-            }, 'audiences', [
+            }, 'channels', [
                 '$schema' => 'http://json-schema.org/draft-07/schema#',
-                'title' => 'Audiences',
+                'title' => 'Channels',
                 'type' => 'array',
                 'uniqueItems' => true,
                 'items' => ['oneOf' => [
-                    ['const' => 'borrowers', 'title' => 'Borrowers'],
-                    ['const' => 'partners', 'title' => 'Partners'],
+                    ['const' => 'email', 'title' => 'Email'],
+                    ['const' => 'sms', 'title' => 'SMS'],
                 ]],
             ]],
             [new class extends base\Model {
@@ -398,25 +398,25 @@ class JsonSchemaTest extends TestCase
                 'items' => ['enum' => ['a', 'b',]],
             ]],
             [self::labelsModel(), new validators\RangeValidator([
-                'range' => ['borrowers', 'partners',],
+                'range' => ['email', 'sms',],
                 'allowArray' => true,
-                'attributes' => 'audiences',
+                'attributes' => 'channels',
             ]), [
                 'type' => 'array',
                 'uniqueItems' => true,
                 'items' => ['oneOf' => [
-                    ['const' => 'borrowers', 'title' => 'Borrowers'],
-                    ['const' => 'partners', 'title' => 'Partners'],
+                    ['const' => 'email', 'title' => 'Email'],
+                    ['const' => 'sms', 'title' => 'SMS'],
                 ]],
             ]],
             [self::labelsModel(), new validators\RangeValidator([
-                'range' => ['borrowers', 'unknown',],
+                'range' => ['email', 'unknown',],
                 'allowArray' => true,
-                'attributes' => 'audiences',
+                'attributes' => 'channels',
             ]), [
                 'type' => 'array',
                 'uniqueItems' => true,
-                'items' => ['enum' => ['borrowers', 'unknown',]],
+                'items' => ['enum' => ['email', 'unknown',]],
             ]],
             [$model, new validators\EachValidator([
                 'rule' => ['string', 'max' => 64,],
@@ -431,13 +431,13 @@ class JsonSchemaTest extends TestCase
                 'items' => ['type' => 'integer', 'minimum' => 1,],
             ]],
             [self::labelsModel(), new validators\EachValidator([
-                'rule' => ['in', 'range' => ['borrowers', 'partners',],],
-                'attributes' => 'audiences',
+                'rule' => ['in', 'range' => ['email', 'sms',],],
+                'attributes' => 'channels',
             ]), [
                 'type' => 'array',
                 'items' => ['oneOf' => [
-                    ['const' => 'borrowers', 'title' => 'Borrowers'],
-                    ['const' => 'partners', 'title' => 'Partners'],
+                    ['const' => 'email', 'title' => 'Email'],
+                    ['const' => 'sms', 'title' => 'SMS'],
                 ]],
             ]],
             [$model, new validators\EachValidator([
@@ -465,9 +465,9 @@ class JsonSchemaTest extends TestCase
             public function attributeValuesLabels(string $attribute): ?array
             {
                 return [
-                    'audiences' => [
-                        'borrowers' => 'Borrowers',
-                        'partners' => 'Partners',
+                    'channels' => [
+                        'email' => 'Email',
+                        'sms' => 'SMS',
                     ],
                 ][$attribute] ?? null;
             }

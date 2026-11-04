@@ -9,7 +9,7 @@ use Horat1us\Yii\Tests\Fixtures\RegistrationModel;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The borrower registration schema is rendered by the client sites, so its output is pinned
+ * A registration form schema is rendered by clients, so its output is pinned
  * exactly (key order and types included): the output as of 2.1.0.
  */
 class RegistrationSchemaTest extends TestCase
@@ -24,7 +24,7 @@ class RegistrationSchemaTest extends TestCase
     {
         $this->assertSame([
             '$schema' => 'http://json-schema.org/draft-07/schema#',
-            'title' => 'Borrower Request Data',
+            'title' => 'Registration Form',
             'type' => 'object',
             'properties' => [
                 'first_name' => [
